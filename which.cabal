@@ -6,17 +6,19 @@ author: Obsidian Systems LLC
 maintainer: maintainer@obsidian.systems
 copyright: 2019 Obsidian Systems LLC
 build-type: Simple
-extra-source-files: ChangeLog.md
+extra-source-files: ChangeLog.md README.md
 cabal-version: >=1.10
 category: System
+synopsis: Determine the full path to an executable.
+description: Determine the full path to an executable, similar to the *nix "which" command.
 
 library
   exposed-modules: System.Which
   build-depends:
-                base
-              , shelly
-              , text
-              , template-haskell
+    base                >= 4.12.0 && < 4.13,
+    shelly              >= 1.9.0 && < 1.10,
+    text                >= 1.2.3 && < 1.3,
+    template-haskell    >= 2.14.0 && < 2.15
 
   hs-source-dirs:      src
   default-language:    Haskell2010
