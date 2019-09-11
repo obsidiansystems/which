@@ -6,10 +6,11 @@ import Control.Monad (foldM)
 import Control.Monad.Trans.Maybe
 import Data.Bool (bool)
 import Data.List (isPrefixOf)
-import qualified Data.Text as T
+import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
+import qualified Data.Text as T
 import Language.Haskell.TH (Exp, Q, reportError, runIO)
-import System.Directory (executable, getPermissions)
+import System.Directory (executable, getPermissions, findExecutablesInDirectories)
 import System.Environment (lookupEnv)
 import System.FilePath (searchPathSeparator)
 import System.FilePath.Posix ((</>))
@@ -24,22 +25,13 @@ isExecutable f = catchIOError (fmap executable $ getPermissions f) (const $ pure
 --   found
 which :: FilePath -> IO (Maybe FilePath)
 which f = do
-  path <- (runMaybeT $ MaybeT (lookupEnv "HOST_PATH") <|> MaybeT (lookupEnv "PATH"))
+  path <- runMaybeT $ MaybeT (lookupEnv "HOST_PATH") <|> MaybeT (lookupEnv "PATH")
   case path of
     Just path -> do
-      fp <- lookupSearchPath f path
-      case fp of
-        Just fp' -> fmap (bool Nothing (Just fp')) $ isExecutable fp'
-        Nothing -> pure Nothing
+      fmap listToMaybe $
+        findExecutablesInDirectories (fmap T.unpack $
+          T.split (== searchPathSeparator) $ T.pack path) f
     Nothing -> pure Nothing
-
--- | Lookup a path inside of a given search path.
-lookupSearchPath :: FilePath -> String -> IO (Maybe FilePath)
-lookupSearchPath f path = findPath $ T.split (== searchPathSeparator) $ T.pack path
-  where findPath [] = pure Nothing
-        findPath (x:xs) =
-          let fp = T.unpack x </> f
-          in bool (findPath xs) (pure $ Just fp) =<< isExecutable fp
 
 -- | Run `which` at compile time, and substitute the full path to the executable.
 --
