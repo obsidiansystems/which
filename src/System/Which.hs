@@ -1,17 +1,45 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 module System.Which (which, staticWhich) where
 
-import qualified Shelly as Sh
-import qualified Data.Text as T
-import Language.Haskell.TH (Exp, Q, reportError, runIO)
-import Data.Monoid ((<>))
+import Control.Applicative
+import Control.Monad (foldM)
+import Control.Monad.Trans.Maybe
+import Data.Bool (bool)
 import Data.List (isPrefixOf)
+import qualified Data.Text as T
+import Data.Monoid ((<>))
+import Language.Haskell.TH (Exp, Q, reportError, runIO)
+import System.Directory (executable, getPermissions)
+import System.Environment (lookupEnv)
+import System.FilePath (searchPathSeparator)
+import System.FilePath.Posix ((</>))
+import System.IO.Error (catchIOError)
+
+-- | Is this path executable?
+isExecutable :: FilePath -> IO Bool
+isExecutable f = catchIOError (fmap executable $ getPermissions f) (const $ pure False)
 
 -- | Determine which executable would run if the given path were
 --   executed, or return Nothing if a suitable executable cannot be
 --   found
 which :: FilePath -> IO (Maybe FilePath)
-which f = fmap (fmap (T.unpack . Sh.toTextIgnore)) $ Sh.shelly $ Sh.which $ Sh.fromText $ T.pack f
+which f = do
+  path <- (runMaybeT $ MaybeT (lookupEnv "HOST_PATH") <|> MaybeT (lookupEnv "PATH"))
+  case path of
+    Just path -> do
+      fp <- lookupSearchPath f path
+      case fp of
+        Just fp' -> fmap (bool Nothing (Just fp')) $ isExecutable fp'
+        Nothing -> pure Nothing
+    Nothing -> pure Nothing
+
+-- | Lookup a path inside of a given search path.
+lookupSearchPath :: FilePath -> String -> IO (Maybe FilePath)
+lookupSearchPath f path = findPath $ T.split (== searchPathSeparator) $ T.pack path
+  where findPath [] = pure Nothing
+        findPath (x:xs) =
+          let fp = T.unpack x </> f
+          in bool (findPath xs) (pure $ Just fp) =<< isExecutable fp
 
 -- | Run `which` at compile time, and substitute the full path to the executable.
 --
