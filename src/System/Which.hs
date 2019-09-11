@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
-module System.Which where
+module System.Which (which, staticWhich) where
 
 import qualified Shelly as Sh
 import qualified Data.Text as T
