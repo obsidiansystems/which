@@ -2,23 +2,15 @@
 module System.Which (which, staticWhich) where
 
 import Control.Applicative
-import Control.Monad (foldM)
 import Control.Monad.Trans.Maybe
-import Data.Bool (bool)
 import Data.List (isPrefixOf)
 import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Language.Haskell.TH (Exp, Q, reportError, runIO)
-import System.Directory (executable, getPermissions, findExecutablesInDirectories)
+import System.Directory (findExecutablesInDirectories)
 import System.Environment (lookupEnv)
 import System.FilePath (searchPathSeparator)
-import System.FilePath.Posix ((</>))
-import System.IO.Error (catchIOError)
-
--- | Is this path executable?
-isExecutable :: FilePath -> IO Bool
-isExecutable f = catchIOError (fmap executable $ getPermissions f) (const $ pure False)
 
 -- | Determine which executable would run if the given path were
 --   executed, or return Nothing if a suitable executable cannot be
@@ -27,10 +19,9 @@ which :: FilePath -> IO (Maybe FilePath)
 which f = do
   path <- runMaybeT $ MaybeT (lookupEnv "HOST_PATH") <|> MaybeT (lookupEnv "PATH")
   case path of
-    Just path -> do
-      fmap listToMaybe $
-        findExecutablesInDirectories (fmap T.unpack $
-          T.split (== searchPathSeparator) $ T.pack path) f
+    Just path' -> fmap listToMaybe $
+      findExecutablesInDirectories (fmap T.unpack $
+        T.split (== searchPathSeparator) $ T.pack path') f
     Nothing -> pure Nothing
 
 -- | Run `which` at compile time, and substitute the full path to the executable.
