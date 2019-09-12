@@ -23,11 +23,7 @@ staticWhich f = do
   mf' <- runIO $ which f
   case mf' of
     Nothing -> compileError $ "Could not find executable for " <> show f
-    Just f'
-      | "/nix/store/" `isPrefixOf` f' -> [| f' |]
-      | otherwise -> compileError $
-        "Path to executable " <> show f <> " was found in " <> show f'
-        <> " which is not in /nix/store. Be sure to add the relevant package to default.nix."
+    Just f' -> [| f' |]
 
   where
     compileError msg' = do
