@@ -1,5 +1,6 @@
 import Control.Exception
 import Data.List
+import Data.Monoid ((<>))
 import System.Directory
 import System.Environment
 import System.Exit
