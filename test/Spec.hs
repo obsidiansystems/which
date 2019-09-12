@@ -32,7 +32,11 @@ setup = do
   appendFile (bin3 </> "hello") "hello"
   makeExecutable $ bin3 </> "hello"
   appendFile (bin3 </> "hello2") "hello2"
+
+  -- Don’t make this one executable to make sure we don’t resolve
+  -- non-executable exes below.
   -- makeExecutable $ bin3 </> "hello2"
+
   appendFile (bin3 </> "hello3") "hello3"
   makeExecutable $ bin3 </> "hello3"
 
