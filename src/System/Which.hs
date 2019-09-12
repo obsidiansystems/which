@@ -38,7 +38,7 @@ staticWhich f = do
       | "/nix/store/" `isPrefixOf` f' -> [| f' |]
       | otherwise -> compileError $
         "Path to executable " <> show f <> " was found in " <> show f'
-        <> " which is not in /nix/store. Be sure to add the relevant package to 'backendTools' in default.nix."
+        <> " which is not in /nix/store. Be sure to add the relevant package to default.nix."
 
   where
     compileError msg' = do
