@@ -1,17 +1,28 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 module System.Which (which, staticWhich) where
 
-import qualified Shelly as Sh
+import Control.Applicative
+import Control.Monad.Trans.Maybe
+import Data.List (isPrefixOf)
+import Data.Maybe (listToMaybe)
+import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Language.Haskell.TH (Exp, Q, reportError, runIO)
-import Data.Monoid ((<>))
-import Data.List (isPrefixOf)
+import System.Directory (findExecutablesInDirectories)
+import System.Environment (lookupEnv)
+import System.FilePath (searchPathSeparator)
 
 -- | Determine which executable would run if the given path were
 --   executed, or return Nothing if a suitable executable cannot be
 --   found
 which :: FilePath -> IO (Maybe FilePath)
-which f = fmap (fmap (T.unpack . Sh.toTextIgnore)) $ Sh.shelly $ Sh.which $ Sh.fromText $ T.pack f
+which f = do
+  path <- runMaybeT $ MaybeT (lookupEnv "HOST_PATH") <|> MaybeT (lookupEnv "PATH")
+  case path of
+    Just path' -> fmap listToMaybe $
+      findExecutablesInDirectories (fmap T.unpack $
+        T.split (== searchPathSeparator) $ T.pack path') f
+    Nothing -> pure Nothing
 
 -- | Run `which` at compile time, and substitute the full path to the executable.
 --
