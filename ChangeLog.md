@@ -1,5 +1,9 @@
 # Revision history for which
 
+## 0.2
+
+* Allow results outside of the nix store (use `staticWhichNix` for the old behavior, which requires results to be in `/nix/store`)
+
 ## 0.1.0.1
 
 * Loosen version bounds. Support GHC 8.8 and 8.10
