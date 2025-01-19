@@ -1,5 +1,9 @@
 # Revision history for which
 
+## 0.2.0.3
+
+* Support GHC 9.12
+
 ## 0.2.0.2 -- Release 1
 
 * Support GHC 9.10
